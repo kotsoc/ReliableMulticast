@@ -1,5 +1,6 @@
 
 import mcgui.*;
+import java.util.*;
 
 /**
  * Message implementation for ExampleCaster.
@@ -9,10 +10,12 @@ import mcgui.*;
 public class ExampleMessage extends Message {
         
     String text;
+    Vector<Integer> timestamp;
         
-    public ExampleMessage(int sender,String text) {
+    public ExampleMessage(int sender,String text,Vector<Integer> timestamp) {
         super(sender);
         this.text = text;
+		this.timestamp = timestamp;
     }
     
     /**
@@ -23,6 +26,11 @@ public class ExampleMessage extends Message {
     public String getText() {
         return text;
     }
-    
+	
+	public void setTimestamp(Vector<Integer> timesta){
+		this.timestamp = timesta;
+	}
+
     public static final long serialVersionUID = 0;
 }
+
