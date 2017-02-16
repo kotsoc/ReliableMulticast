@@ -8,16 +8,16 @@ import java.util.*;
  * @author Andreas Larsson &lt;larandr@chalmers.se&gt;
  */
 public class ExampleMessage extends Message {
-        
+
     String text;
-    Vector<Integer> timestamp;
-        
-    public ExampleMessage(int sender,String text,Vector<Integer> timestamp) {
+    String timestamp;
+
+    public ExampleMessage(int sender,String text,String timestamp) {
         super(sender);
         this.text = text;
-		this.timestamp = timestamp;
+	this.timestamp = timestamp;
     }
-    
+
     /**
      * Returns the text of the message only. The toString method can
      * be implemented to show additional things useful for debugging
@@ -26,11 +26,6 @@ public class ExampleMessage extends Message {
     public String getText() {
         return text;
     }
-	
-	public void setTimestamp(Vector<Integer> timesta){
-		this.timestamp = timesta;
-	}
 
     public static final long serialVersionUID = 0;
 }
-
