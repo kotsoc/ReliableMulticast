@@ -10,9 +10,9 @@ import java.util.*;
 public class ExampleMessage extends Message {
 
     String text;
-    String timestamp;
+    int timestamp;
 
-    public ExampleMessage(int sender,String text,String timestamp) {
+    public ExampleMessage(int sender,String text, int timestamp) {
         super(sender);
         this.text = text;
 	this.timestamp = timestamp;
