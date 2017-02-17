@@ -11,11 +11,13 @@ public class ExampleMessage extends Message {
 
     String text;
     int timestamp;
-
-    public ExampleMessage(int sender,String text, int timestamp) {
+    int proposed;
+ 
+    public ExampleMessage(int sender,String text, int timestamp,int proposed) {
         super(sender);
         this.text = text;
 	this.timestamp = timestamp;
+	this.proposed = proposed;
     }
 
     /**

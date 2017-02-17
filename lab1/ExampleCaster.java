@@ -9,9 +9,10 @@ import java.util.*;
  */
 public class ExampleCaster extends Multicaster {
      Vector<Integer> clock = new Vector<Integer>();
-	 LinkedList<int[]> oura = new LinkedList<int[]>();
-	 Dictionary<String, String> msgHistory = new Hashtable<String, String>();
-     int myClock = 0;
+     //LinkedList<int[]> queue = new LinkedList<int[]>();
+     TreeMap<Integer, String> msgHistory = new TreeMap<Integer, String>();
+     int myClock,delivered,propCount  = 0;
+	 int agrSeq = 0;
     /**
      * No initializations needed for this simple one
      */
@@ -27,18 +28,15 @@ public class ExampleCaster extends Multicaster {
      * The GUI calls this module to multicast a message
      */
     public void cast(String messagetext) {
-
-	clock.set(id,clock.get(id)+1);
+	int propSeq = 0;
 	myClock++;
         for(int i=0; i < hosts; i++) {
             /* Sends to everyone except itself */
             if(i != id) {
-                bcom.basicsend(i,new ExampleMessage(id, messagetext,myClock));
+                bcom.basicsend(i,new ExampleMessage(id, messagetext,myClock,propSeq));
             }
         }
         mcui.debug("Sent out: \""+messagetext+"\"");
-        mcui.deliver(id, messagetext, "from myself!");
-		System.out.println("Clock" + clock);
     }
 
     /**
@@ -47,32 +45,68 @@ public class ExampleCaster extends Multicaster {
      */
 
     public void basicreceive(int peer,Message message) {
-
 		int msgClock = ((ExampleMessage)message).timestamp;
 		int sender = message.getSender();
-		int tupple[] = {sender,msgClock};
-		
-		String key = Integer.toString(sender)+Integer.toString(msgClock);
-		System.out.println("Message Clock: " + msgClock);
-		msgHistory.put(key,((ExampleMessage)message).text);
-		if ( msgClock <= clock.get(sender)+1 ){
-			String time_s =Integer.toString(((ExampleMessage)message).timestamp);
-			mcui.deliver(peer, ((ExampleMessage)message).text,time_s);
+		int clockSum = 0;
+		// We propose a sequence number for the message		
+		if (((ExampleMessage)message).proposed == 0 ){
+			for (int i : clock){
+				clockSum += i; // Calculating proposal
+			}
 			clock.set(sender,msgClock);
-			oura.addFirst(tupple);
+			bcom.basicsend(sender,new ExampleMessage(sender, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,clockSum+1));
 		}
-		else{
-			System.out.println("STIN OURA");
-			// STIN OURAAA
+		else{ 
+			System.out.println(sender);
+			if (sender == id ){ // Receiving a proposal, Calculating and  Sending Agreeed sequence
+				if (propCount <= hosts-1 && ((ExampleMessage)message).proposed >= agrSeq){
+					agrSeq = ((ExampleMessage)message).proposed;
+					System.out.println("agrSeq: " + agrSeq);
+					propCount++;
+					System.out.println("Proposal too low"+ propCount);
+					if (propCount == hosts -1){
+						for(int i=0; i < hosts; i++) {
+            			/* Sends to everyone except itself */
+		        			if(i != id) {
+		           				bcom.basicsend(i,new ExampleMessage(id, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,agrSeq));
+		        			}
+						}
+						msgHistory.put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
+						clock.set(id,clock.get(id)+1);
+						deliver(agrSeq,sender);
+						propCount = 0;
+					}					
+				}
+				else{
+					System.out.println("Proposal too low"+ agrSeq);
+				}
+			}
+			else { 										// Receiving  the agreed Sequence
+				msgHistory.put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
+				deliver(((ExampleMessage)message).proposed,sender);	
+			}
 		}
-		System.out.println("Clock: " + clock);
-		System.out.println(oura);
+		System.out.println(clock);
     }
 
 
-	public void deliver(int id,String messagetext,int clock_sum){
-		//if(queue[1] == queue[2] 
-		//mcui.deliver(id, messagetext, "from myself!");
+	public void deliver(int seq,int ident){
+		delivered++;
+		if (delivered == seq && ident == id){
+			mcui.deliver(id, msgHistory.remove(seq), "from myself!");	
+		}
+		else if(delivered == seq && ident != id){
+			mcui.deliver(id, msgHistory.remove(seq), "from"+ Integer.toString(ident));
+		}
+		else{
+			System.out.println("message out of sequence");
+			for(int i=0;i<msgHistory.size();i++){
+				if (msgHistory.containsValue(i)){
+				mcui.deliver(id, msgHistory.remove(seq), "from"+ Integer.toString(ident));						
+				}
+			}
+		}	
+		
 	}
     /**
      * Signals that a peer is down and has been down for a while to
