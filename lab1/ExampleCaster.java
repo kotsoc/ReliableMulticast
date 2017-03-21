@@ -48,8 +48,7 @@ public class ExampleCaster extends Multicaster {
     public void basicreceive(int peer,Message message) {
 		int msgClock = ((ExampleMessage)message).timestamp;
 		int sender = message.getSender();
-		int clockSum = 0;
-		if 
+		int agrSeq = 0; 
 		// We propose a sequence number for the message		
 		if (((ExampleMessage)message).proposed == 0 ){
 			int max = 0;
