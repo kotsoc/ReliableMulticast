@@ -67,7 +67,7 @@ public class ExampleCaster extends Multicaster {
 					agrSeq = ((ExampleMessage)message).proposed;
 					System.out.println("agrSeq: " + agrSeq);
 					propCount++;
-					System.out.println("Proposal too low, PropCount: "+ propCount);
+					System.out.println("Proposal too low, agrSeq: "+ propCount);
 					if (propCount == cHosts -1){
 						for(int i=0; i < hosts; i++) {
             					/* Sends to everyone except itself */
