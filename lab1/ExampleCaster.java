@@ -49,6 +49,7 @@ public class ExampleCaster extends Multicaster {
 		int msgClock = ((ExampleMessage)message).timestamp;
 		int sender = message.getSender();
 		int clockSum = 0;
+		if 
 		// We propose a sequence number for the message		
 		if (((ExampleMessage)message).proposed == 0 ){
 			int max = 0;
@@ -58,7 +59,7 @@ public class ExampleCaster extends Multicaster {
 				} 
 			}
 			clock.set(sender,msgClock);
-			bcom.basicsend(sender,new ExampleMessage(sender, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,clockSum+1));
+			bcom.basicsend(sender,new ExampleMessage(sender, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,max+1));
 		}
 		else{ 
 			System.out.println(sender);
