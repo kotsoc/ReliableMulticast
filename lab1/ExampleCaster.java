@@ -9,10 +9,11 @@ import java.util.*;
  */
 public class ExampleCaster extends Multicaster {
      ArrayList<Integer> clock = new ArrayList<Integer>();
-     //LinkedList<int[]> queue = new LinkedList<int[]>();
+     ArrayList<Integer> propCount = new ArrayList<Integer>();
+     ArrayList<Integer> agrSeq = new ArrayList<Integer>();
      TreeMap<Integer, String> msgHistory = new TreeMap<Integer, String>();
-     int myClock,delivered,propCount  = 0;
-     int agrSeq = 0;
+     int delivered  = 1;
+     int myClock = 0;
      int cHosts=3;
     /**
      * No initializations needed for this simple one
@@ -31,6 +32,9 @@ public class ExampleCaster extends Multicaster {
     public void cast(String messagetext) {
 	int propSeq = 0;
 	myClock++;
+	clock.set(id,myClock);
+        propCount.add(0);
+	agrSeq.add(0);
         for(int i=0; i < hosts; i++) {
             /* Sends to everyone except itself */
             if(i != id) {
@@ -48,7 +52,6 @@ public class ExampleCaster extends Multicaster {
     public void basicreceive(int peer,Message message) {
 		int msgClock = ((ExampleMessage)message).timestamp;
 		int sender = message.getSender();
-		int agrSeq = 0; 
 		// We propose a sequence number for the message		
 		if (((ExampleMessage)message).proposed == 0 ){
 			int max = 0;
@@ -57,32 +60,30 @@ public class ExampleCaster extends Multicaster {
 					max=i;				
 				} 
 			}
-			clock.set(sender,msgClock);
 			bcom.basicsend(sender,new ExampleMessage(sender, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,max+1));
+			clock.set(sender,msgClock);
 		}
 		else{ 
 			System.out.println(sender);
 			if (sender == id ){ // Receiving a proposal, Calculating and  Sending Agreeed sequence
-				if (propCount <= hosts-1 && ((ExampleMessage)message).proposed >= agrSeq){
-					agrSeq = ((ExampleMessage)message).proposed;
+				if (propCount.get(msgClock-1) <= hosts-1 && ((ExampleMessage)message).proposed >= agrSeq.get(msgClock-1)){
+					agrSeq.set(msgClock-1,((ExampleMessage)message).proposed);
 					System.out.println("agrSeq: " + agrSeq);
-					propCount++;
-					System.out.println("Proposal too low, PropCount: "+ propCount);
-					if (propCount == cHosts -1){
+					propCount.set(msgClock-1,(propCount.get(msgClock-1))+1);
+					System.out.println("PropCount: "+ propCount);
+					if (propCount.get(msgClock-1) == cHosts -1){
 						for(int i=0; i < hosts; i++) {
             					/* Sends to everyone except itself */
 		        			if(i != id) {
-		           				bcom.basicsend(i,new ExampleMessage(id, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,agrSeq));
+		           				bcom.basicsend(i,new ExampleMessage(id, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,agrSeq.get(msgClock-1)));
 		        			}
 						}
 						msgHistory.put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
-						clock.set(id,clock.get(id)+1);
-						deliver(agrSeq,sender);
-						propCount = 0;
+						deliver(agrSeq.get(msgClock-1),sender);
 					}					
 				}
 				else{
-					System.out.println("Proposal too low, agrSeq: "+ agrSeq);
+					System.out.println("Too many Proposals"+ propCount);
 				}
 			}
 			else { 	// Receiving  the agreed Sequence
@@ -95,16 +96,17 @@ public class ExampleCaster extends Multicaster {
 
 
 	public void deliver(int seq,int ident){
-		delivered++;
 		if (delivered == seq && ident == id){
-			mcui.deliver(id, msgHistory.remove(seq), "from myself!");	
+			mcui.deliver(id, msgHistory.remove(seq), "from myself!");
+			delivered++;	
 		}
 		else if(delivered == seq && ident != id){
-			mcui.deliver(id, msgHistory.remove(seq), "from"+ Integer.toString(ident));
+			mcui.deliver(ident, msgHistory.remove(seq), "from"+ Integer.toString(ident));
+			delivered++;
 		}
 		else{
 			System.out.println("message out of sequence");
-			for(int i=0;i<msgHistory.size();i++){
+			for(int i=0;i<=seq+1;i++){
 				if (msgHistory.containsValue(i)){
 				mcui.deliver(id, msgHistory.remove(seq), "from"+ Integer.toString(ident));						
 				}
