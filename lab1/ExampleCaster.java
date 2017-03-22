@@ -12,7 +12,7 @@ public class ExampleCaster extends Multicaster {
      ArrayList<Integer> propCount = new ArrayList<Integer>();
      ArrayList<Integer> agrSeq = new ArrayList<Integer>();
      TreeMap<Integer, String> msgHistory = new TreeMap<Integer, String>();
-     int delivered  = 1;
+     int delivered  = 0;
      int myClock = 0;
      int cHosts=3;
     /**
@@ -58,7 +58,10 @@ public class ExampleCaster extends Multicaster {
 			for (int i : clock){
 				if (i >= max){// Calculating proposal
 					max=i;				
-				} 
+				}
+			}
+			if (max<delivered){
+				max=delivered;
 			}
 			bcom.basicsend(sender,new ExampleMessage(sender, ((ExampleMessage)message).text,((ExampleMessage)message).timestamp,max+1));
 			clock.set(sender,msgClock);
@@ -96,11 +99,11 @@ public class ExampleCaster extends Multicaster {
 
 
 	public void deliver(int seq,int ident){
-		if (delivered == seq && ident == id){
+		if (delivered == seq-1 && ident == id){
 			mcui.deliver(id, msgHistory.remove(seq), "from myself!");
 			delivered++;	
 		}
-		else if(delivered == seq && ident != id){
+		else if(delivered == seq-1 && ident != id){
 			mcui.deliver(ident, msgHistory.remove(seq), "from"+ Integer.toString(ident));
 			delivered++;
 		}
@@ -122,6 +125,6 @@ public class ExampleCaster extends Multicaster {
      */
     public void basicpeerdown(int peer) {
         mcui.debug("Peer "+peer+" has been dead for a while now!");
-	cHosts = cHosts -1;
+		cHosts = cHosts -1;
     }
 }
