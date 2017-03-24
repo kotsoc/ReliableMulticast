@@ -134,8 +134,8 @@ public class ExampleCaster extends Multicaster {
 			}
 			if (!msgHistory2.get(j).containsKey(min) && found == true ){
 				for(int i=0;i<=msgHistory.size();i++){
-					mcui.deliver(i, msgHistory.poll(), "from"+ Integer.toString(i));
-					System.out.println("Message Seq:"+ min);
+					mcui.deliver(i, msgHistory.poll(), "from: "+ Integer.toString(ident));
+					System.out.println("Message Seq: "+ min);
 				}
 				min = min++;
 				found = false;
@@ -160,7 +160,7 @@ public class ExampleCaster extends Multicaster {
 					break;
 				}
 		if (msgHistory2.get(i).containsKey(delivered)){
-			mcui.deliver(i, msgHistory2.get(i).remove(delivered), "from"+ Integer.toString(i));
+			mcui.deliver(i, msgHistory2.get(i).remove(delivered), "from: "+ Integer.toString(ident));
 			System.out.println("Message Seq:"+ delivered);
 			found = true;
 					}						
