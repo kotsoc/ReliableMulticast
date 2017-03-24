@@ -11,10 +11,11 @@ public class ExampleCaster extends Multicaster {
      ArrayList<Integer> clock = new ArrayList<Integer>();
      ArrayList<Integer> propCount = new ArrayList<Integer>();
      ArrayList<Integer> agrSeq = new ArrayList<Integer>();
-     Queue<String> msgHistory = new LinkedList<String>();
+	 TreeMap<Integer,String> msgHistory3 = new TreeMap<Integer,String>();
+	 ArrayList<Integer> msgRcv = new ArrayList<Integer>();
 	 ArrayList<TreeMap<Integer,String>> msgHistory2 = new ArrayList<TreeMap<Integer, String>>();
-     int delivered  = 1;
-     int myClock,maxProp,maxSelf = 0;
+     int delivered  = 19;
+     int myClock,maxProp,maxSelf,liveliness = 0;
      int cHosts=3;
     /**
      * No initializations needed for this simple one
@@ -24,6 +25,7 @@ public class ExampleCaster extends Multicaster {
 		cHosts=hosts;
 		for (int i=0;i<hosts;i++){
     		clock.add(0);
+			msgRcv.add(0);
 			msgHistory2.add(new TreeMap<Integer, String>());
 		}
     }
@@ -91,8 +93,8 @@ public class ExampleCaster extends Multicaster {
 						}
 						System.out.println("agrSeq: " + agrSeq);
 						maxProp = agrSeq.get(msgClock-1);
-						//msgHistory.put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
 						msgHistory2.get(id).put((agrSeq.get(msgClock-1)),((ExampleMessage)message).text);
+						msgRcv.set(id,1);
 						deliver(agrSeq.get(msgClock-1),id);
 					}							
 				}
@@ -100,9 +102,9 @@ public class ExampleCaster extends Multicaster {
 					System.out.println("Too many proposals"+ propCount);
 				}
 			}
-			else { 	// Receiving  the agreed Sequence
-				//msgHistory.put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
+			else { 	// Receiving  the agreed Sequencem
 				msgHistory2.get(sender).put(((ExampleMessage)message).proposed,((ExampleMessage)message).text);
+				msgRcv.set(sender,1);
 				deliver(((ExampleMessage)message).proposed,sender);	
 			}
 		}
@@ -110,67 +112,54 @@ public class ExampleCaster extends Multicaster {
 		    System.out.println(clock);
 		}
 		else {
-		    System.out.println(msgHistory2.get(id).entrySet());
+		    System.out.println(msgHistory3.entrySet());
 		}
     }
 
-	public void deliver(int seq,int ident){		
-		Integer min = 1;
-		int j = ident;
-		boolean found = false;
-		while (min <=seq){
-			for(int i=0;i<cHosts;i++){
-				for(Map.Entry<Integer,String> entry : msgHistory2.get(i).entrySet()){
-					if (entry.getKey()<= min){
-						j = i;
-						min = entry.getKey();
-						msgHistory.add(msgHistory2.get(j).remove(min));
-						found= true;	
+
+
+	public void deliver(int seq,int ident){
+		int k = Integer.valueOf(String.valueOf(seq) + String.valueOf(ident));
+		int j,key = 0;
+		msgHistory3.put(k,msgHistory2.get(ident).remove(seq));
+			try{
+				if (msgHistory3.firstKey() > delivered){
+					liveliness++;
+				
+					if ((msgHistory3.size() > myClock*2 || msgHistory3.size() > 10) && liveliness> 7){
+						if(arraySum(msgRcv) ==cHosts){
+							delivered = msgHistory3.firstKey()+7;
+							System.out.println("Adjusting Delivery number For liveliness");
+						}
 					}
-					else{
-						break;
+				}
+					while (msgHistory3.firstKey() <= delivered){
+						j = msgHistory3.firstKey()%10;
+						key = msgHistory3.firstKey();
+						mcui.deliver(key, msgHistory3.remove(key), "from: "+ Integer.toString(j));
+						liveliness = 0;
+						System.out.println("Message Seq:"+ key);
+						System.out.println("Delivery counter:"+ delivered);
+						if (msgHistory3.size() > 0){
+							if (msgHistory3.firstEntry().getKey() > delivered){
+								delivered = delivered+10;
+							}
+							else {
+								System.out.println("More Messages to be delivered");
+							}
+						}
+						else {
+							System.out.println("More Messages to be delivered");
+							if ((delivered - key) < 13){
+								delivered = delivered+10;
+							}	
+						}				
 					}
-				}
-			}
-			if (!msgHistory2.get(j).containsKey(min) && found == true ){
-				for(int i=0;i<=msgHistory.size();i++){
-					mcui.deliver(i, msgHistory.poll(), "from: "+ Integer.toString(ident));
-					System.out.println("Message Seq: "+ min);
-				}
-				min = min++;
-				found = false;
-			}					
-			else{
-				min = min +1;				
-			}
-		}
-	}
-
-
-
-	/*public void deliver(int seq,int ident){
-		boolean found = true;
-		while (delivered <= seq)	
-		for(int i=0;i<cHosts;i++){
-			for(Map.Entry<Integer,String> entry : msgHistory2.get(i).entrySet()){
-				if (entry.getKey()== delivered){
-					msgHistory.add(msgHistorymsgHistory2.get(i).remove(delivered));
-				}
-				else{
-					break;
-				}
-		if (msgHistory2.get(i).containsKey(delivered)){
-			mcui.deliver(i, msgHistory2.get(i).remove(delivered), "from: "+ Integer.toString(ident));
-			System.out.println("Message Seq:"+ delivered);
-			found = true;
-					}						
-				}
-			}
-			if (i==cHosts && found){
-				delivered++;
-			}
-		}					
-	}*/
+			 }catch (NoSuchElementException e){
+							
+			}						
+	}					
+	
 
 
     /**
@@ -183,4 +172,13 @@ public class ExampleCaster extends Multicaster {
         mcui.debug("Peer "+peer+" has been dead for a while now!");
 		cHosts = cHosts -1;
     }
+
+ 
+	public int arraySum( ArrayList<Integer> list){
+	int sum=0;
+		for (int i : list){
+			sum=sum+i;
+		}
+	return sum;
+	}
 }
