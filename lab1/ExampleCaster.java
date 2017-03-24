@@ -116,9 +116,44 @@ public class ExampleCaster extends Multicaster {
 		}
     }
 
+public void deliver(int seq,int ident){
+		int k = Integer.valueOf(String.valueOf(seq) + String.valueOf(ident));
+		int j,key = 0;
+		msgHistory3.put(k,msgHistory2.get(ident).remove(seq));
+		liveliness++;
+		if (liveliness == arraySum(clock)){
+			try{
+				while (msgHistory3.size()>0){
+					j = msgHistory3.firstKey()%10;
+					key = msgHistory3.firstKey();
+					mcui.deliver(key, msgHistory3.remove(key), "from: "+ Integer.toString(j));
+					System.out.println("Message Seq:"+ key);
+					System.out.println("Delivery counter:"+ delivered);
+				}
+			 }catch (NoSuchElementException e){
+				System.out.println("MsgHistory Empty");			
+			}
+		}						
+	}
 
 
-	public void deliver(int seq,int ident){
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	/*public void deliver(int seq,int ident){
 		int k = Integer.valueOf(String.valueOf(seq) + String.valueOf(ident));
 		int j,key = 0;
 		msgHistory3.put(k,msgHistory2.get(ident).remove(seq));
@@ -159,7 +194,7 @@ public class ExampleCaster extends Multicaster {
 							
 			}						
 	}					
-	
+	*/
 
 
     /**
